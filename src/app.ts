@@ -1,14 +1,27 @@
 import express, { Request, Response, NextFunction } from "express";
+import { prisma } from "./config/prisma";
 
 const app = express();
 app.use(express.json());
 
-app.get("/health", (_req: Request, res: Response) => {
-  res.status(200).json({
-    status: "success",
-    service: "Ledgerly",
-    timestamp: new Date().toISOString(),
-  });
+app.get("/health", async (_req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+
+    res.status(200).json({
+      status: "success",
+      service: "Ledgerly",
+      database: "connected",
+      timestamp: new Date().toISOString(),
+    });
+  } catch {
+    res.status(503).json({
+      status: "error",
+      service: "Ledgerly",
+      database: "disconnected",
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 app.use((_req: Request, res: Response) => {

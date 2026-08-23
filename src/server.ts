@@ -1,13 +1,15 @@
 import app from "./app.js";
 import { env } from "./config/env.js";
+import { prisma } from "./config/prisma.js";
 
 const server = app.listen(env.PORT, () => {
   console.log(`Server is running on port ${env.PORT} [${env.NODE_ENV}]`);
 });
 
-const handleshutdown = (signal: string) => {
+const shutdown = async (signal: string) => {
   console.log(`\nReceived signal ${signal}. Gracefully shutdown server...`);
 
+  await prisma.$disconnect();
   server.close(async () => {
     try {
       console.log("Server closed successfully");
@@ -24,5 +26,5 @@ const handleshutdown = (signal: string) => {
   }, 10_000);
 };
 
-process.on("SIGINT", () => handleshutdown("SIGINT"));
-process.on("SIGTERM", () => handleshutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
