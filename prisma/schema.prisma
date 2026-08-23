@@ -6,3 +6,127 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum AccountType {
+  CASH
+  BANK
+  E_WALLET
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+
+  accounts   Account[]
+  categories Category[]
+  budgets    Budget[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id       String      @id @default(uuid())
+  name     String
+  type     AccountType
+  balance  Decimal     @default(0) @db.Decimal(19, 4)
+  currency String      @default("IDR")
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions      Transaction[]
+  outgoingTransfers Transfer[] @relation("FromAccount")
+  incomingTransfers Transfer[] @relation("ToAccount")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Category {
+  id   String          @id @default(uuid())
+  name String
+  type TransactionType
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+  budgets      Budget[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  type        TransactionType
+  amount      Decimal         @db.Decimal(19, 4)
+  description String?
+
+  accountId  String
+  categoryId String?
+
+  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  occurredAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([occurredAt])
+}
+
+model Transfer {
+  id          String  @id @default(uuid())
+  amount      Decimal @db.Decimal(19, 4)
+  description String?
+
+  fromAccountId String
+  toAccountId   String
+
+  fromAccount Account @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccount Account @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Cascade)
+
+  occurredAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([occurredAt])
+}
+
+model Budget {
+  id     String  @id @default(uuid())
+  amount Decimal @db.Decimal(19, 4)
+
+  userId     String
+  categoryId String
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  periodStart DateTime
+  periodEnd   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([categoryId])
+}
