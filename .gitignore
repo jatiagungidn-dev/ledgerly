@@ -3,3 +3,7 @@ node_modules
 .vscode
 dist
 coverage
+/src/generated/prisma
+.agents
+.claude
+.windsurf
