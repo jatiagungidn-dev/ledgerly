@@ -3,13 +3,13 @@ import jwt from "jsonwebtoken";
 
 import { createUser, findUserByEmail } from "../users/user.repository";
 import { env } from "../../config/env";
-import { loginSchema } from "./auth.schema";
+import { AppError } from "../../utils/app-error";
 
 export const register = async (email: string, password: string) => {
   const existingUser = await findUserByEmail(email);
 
   if (existingUser) {
-    throw new Error("EMAIL_ALREADY_EXISTS");
+    throw new AppError(409, "Email already exists");
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -27,14 +27,12 @@ export const register = async (email: string, password: string) => {
 export const login = async (email: string, password: string) => {
   const user = await findUserByEmail(email);
 
-  if (!user) {
-    throw new Error("INVALID_CREDENTIALS");
-  }
+  const passwordMatches = user
+    ? await bcrypt.compare(password, user.passwordHash)
+    : false;
 
-  const passwordMatches = await bcrypt.compare(password, user.passwordHash);
-
-  if (!passwordMatches) {
-    throw new Error("INVALID_CREDENTALS");
+  if (!user || !passwordMatches) {
+    throw new AppError(401, "Invalid email or password");
   }
 
   const token = jwt.sign({ sub: user.id }, env.JWT_SECRET, { expiresIn: "1d" });

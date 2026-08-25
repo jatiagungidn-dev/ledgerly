@@ -1,9 +1,9 @@
 import express, { Request, Response, NextFunction } from "express";
 
-import { env } from "./config/env";
 import { prisma } from "./config/prisma";
 import authRouter from "./modules/auth/auth.routes";
 import { authenticate } from "./middlewares/auth.middleware";
+import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();
 app.use(express.json());
@@ -35,19 +35,11 @@ app.get("/api/me", authenticate, (req, res) => {
 app.use("/api/auth", authRouter);
 
 app.use((_req: Request, res: Response) => {
-  res
+  return res
     .status(404)
     .json({ status: "fail", message: "Cannot find the route here" });
 });
 
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("Internal Server Error", err.stack);
-
-  const message =
-    env.NODE_ENV === "production"
-      ? "Internal Server Error"
-      : err.message || "Something went wrong";
-  res.status(500).json({ status: "error", message });
-});
+app.use(errorHandler);
 
 export default app;
