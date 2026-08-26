@@ -3,6 +3,7 @@ import express, { Request, Response } from "express";
 import { prisma } from "./config/prisma";
 import authRouter from "./modules/auth/auth.routes";
 import accountRouter from "./modules/accounts/account.routes";
+import categoryRouter from "./modules/categories/category.routes";
 import { authenticate } from "./middlewares/auth.middleware";
 import { errorHandler } from "./middlewares/error.middleware";
 
@@ -36,6 +37,8 @@ app.get("/api/me", authenticate, (req, res) => {
 app.use("/api/auth", authRouter);
 
 app.use("/api/account", accountRouter);
+
+app.use("/api/categories", categoryRouter);
 
 app.use((_req: Request, res: Response) => {
   return res
