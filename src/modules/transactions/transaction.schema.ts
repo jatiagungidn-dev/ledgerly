@@ -14,4 +14,4 @@ export const createTransactionSchema = z.object({
   occurredAt: z.coerce.date(),
 });
 
-export type CreateTransactionSchema = z.infer<typeof createTransactionSchema>;
+export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
