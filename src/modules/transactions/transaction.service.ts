@@ -16,7 +16,7 @@ export const create = async (userId: string, data: CreateTransactionInput) => {
     }
 
     if (data.type === "EXPENSE" && account.balance.lessThan(amountDecimal)) {
-      throw new AppError(400, "Insufficent account balance");
+      throw new AppError(400, "Insufficient account balance");
     }
 
     if (data.categoryId) {
@@ -33,19 +33,22 @@ export const create = async (userId: string, data: CreateTransactionInput) => {
       }
     }
 
-    const transaction = await createTransactionRecord({
-      accountId: data.accountId,
-      categoryId: data.categoryId,
-      type: data.type,
-      amount: amountDecimal,
-      description: data.description,
-      occurredAt: data.occurredAt,
-    });
+    const transaction = await createTransactionRecord(
+      {
+        accountId: data.accountId,
+        categoryId: data.categoryId,
+        type: data.type,
+        amount: amountDecimal,
+        description: data.description,
+        occurredAt: data.occurredAt,
+      },
+      tx,
+    );
 
     const balanceAdjustment =
       data.type === "INCOME"
         ? { increment: amountDecimal }
-        : { descrement: amountDecimal };
+        : { decrement: amountDecimal };
 
     await tx.account.update({
       where: { id: data.accountId },

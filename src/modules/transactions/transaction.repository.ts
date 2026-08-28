@@ -25,8 +25,12 @@ export const createTransactionRecord = async (
   });
 };
 
-export const findAccountById = async (accountId: string, userId: string) => {
-  return prisma.account.findFirst({ where: { id: accountId, userId } });
+export const findAccountById = async (
+  accountId: string,
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  return prisma.account.findFirst({ where: { id: accountId, userId, tx } });
 };
 
 export const findCategoryById = async (categoryId: string, userId: string) => {
@@ -42,7 +46,7 @@ export const updateAccountBalance = async (
   const client = tx || prisma;
 
   const balancedAdjustment =
-    type === "INCOME" ? { increment: amount } : { descrement: amount };
+    type === "INCOME" ? { increment: amount } : { decrement: amount };
 
   return client.account.update({
     where: { id: accountId },
