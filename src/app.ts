@@ -5,6 +5,7 @@ import authRouter from "./modules/auth/auth.routes";
 import accountRouter from "./modules/accounts/account.routes";
 import categoryRouter from "./modules/categories/category.routes";
 import transactionRouter from "./modules/transactions/transaction.routes";
+import transferRouter from "./modules/transfers/transfer.routes";
 import { authenticate } from "./middlewares/auth.middleware";
 import { errorHandler } from "./middlewares/error.middleware";
 
@@ -39,9 +40,11 @@ app.use("/api/auth", authRouter);
 
 app.use("/api/account", accountRouter);
 
-app.use("/api/categories", categoryRouter);
+app.use("/api/category", categoryRouter);
 
-app.use("/api/transactions", transactionRouter);
+app.use("/api/transaction", transactionRouter);
+
+app.use("/api/transfer", transferRouter);
 
 app.use((_req: Request, res: Response) => {
   return res
