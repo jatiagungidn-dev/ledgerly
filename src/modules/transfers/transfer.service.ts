@@ -1,66 +1,51 @@
 import { Prisma } from "../../generated/prisma";
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/app-error";
-import {
-  createTransferRecord,
-  findAccountById,
-  findAllTransfers,
-  updateBalance,
-} from "./transfer.repository";
+import { findAccountById } from "../accounts/account.repository";
+import { createTransferRecord, findAllTransfers } from "./transfer.repository";
 import { CreateTransferInput } from "./transfer.schema";
 
 export const create = async (userId: string, data: CreateTransferInput) => {
   const amountDecimal = new Prisma.Decimal(data.amount);
 
-  return prisma.$transaction(
-    async (tx) => {
-      const fromAccount = await findAccountById(data.fromAccountId, userId, tx);
-      if (!fromAccount) {
-        console.debug({ userId, fromAccountId: data.fromAccountId });
-        throw new AppError(404, "Source account not found");
-      }
+  return prisma.$transaction(async (tx) => {
+    const fromAccount = await findAccountById(data.fromAccountId, userId, tx);
+    if (!fromAccount) {
+      throw new AppError(404, "Source account not found");
+    }
 
-      // Allow transferring to accounts owned by other users by not passing userId
-      const toAccount = await findAccountById(data.toAccountId, undefined, tx);
-      if (!toAccount) {
-        console.debug({ userId, toAccountId: data.toAccountId });
-        throw new AppError(404, "Destination account not found");
-      }
+    if (fromAccount.balance.lessThan(amountDecimal)) {
+      throw new AppError(400, "Insufficient account balance");
+    }
 
-      if (fromAccount.id === toAccount.id) {
-        throw new AppError(400, "Cannot transfer to the same account");
-      }
+    const toAccount = await findAccountById(data.toAccountId, userId, tx);
+    if (!toAccount) {
+      throw new AppError(404, "Target account not found");
+    }
 
-      if (fromAccount.currency !== toAccount.currency) {
-        throw new AppError(
-          400,
-          "Cannot transfer between accounts with different currencies",
-        );
-      }
+    const transfer = await createTransferRecord(
+      {
+        fromAccountId: data.fromAccountId,
+        toAccountId: data.toAccountId,
+        amount: amountDecimal,
+        description: data.description,
+        occurredAt: data.occurredAt,
+      },
+      tx,
+    );
 
-      if (fromAccount.balance.lessThan(amountDecimal)) {
-        throw new AppError(400, "Insufficient account balance");
-      }
+    await tx.account.update({
+      where: { id: data.fromAccountId },
+      data: { balance: { decrement: amountDecimal } },
+    });
 
-      const transfer = await createTransferRecord(
-        {
-          fromAccountId: fromAccount.id,
-          toAccountId: toAccount.id,
-          amount: amountDecimal,
-          description: data.description,
-          occurredAt: data.occurredAt,
-        },
-        tx,
-      );
+    await tx.account.update({
+      where: { id: data.toAccountId },
+      data: { balance: { increment: amountDecimal } },
+    });
 
-      await updateBalance(fromAccount.id, amountDecimal, "DECREMENT", tx);
-
-      await updateBalance(toAccount.id, amountDecimal, "INCREMENT", tx);
-
-      return transfer;
-    },
-    { timeout: 15000, maxWait: 15000 },
-  );
+    return transfer;
+  });
 };
 
 export const findAll = async (userId: string) => {
