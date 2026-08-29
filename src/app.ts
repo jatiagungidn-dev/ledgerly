@@ -6,6 +6,7 @@ import accountRouter from "./modules/accounts/account.routes";
 import categoryRouter from "./modules/categories/category.routes";
 import transactionRouter from "./modules/transactions/transaction.routes";
 import transferRouter from "./modules/transfers/transfer.routes";
+import budgetRouter from "./modules/budgets/budget.routes";
 import { authenticate } from "./middlewares/auth.middleware";
 import { errorHandler } from "./middlewares/error.middleware";
 
@@ -45,6 +46,8 @@ app.use("/api/category", categoryRouter);
 app.use("/api/transaction", transactionRouter);
 
 app.use("/api/transfer", transferRouter);
+
+app.use("/api/budget", budgetRouter);
 
 app.use((_req: Request, res: Response) => {
   return res

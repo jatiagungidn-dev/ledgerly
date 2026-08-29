@@ -1,3 +1,4 @@
+import { Prisma } from "../../generated/prisma";
 import { prisma } from "../../config/prisma";
 
 export const createCategory = async (
@@ -14,8 +15,13 @@ export const findCategoriesByUserId = async (userId: string) => {
   });
 };
 
-export const findCategoriesById = async (id: string, userId: string) => {
-  return prisma.category.findFirst({
+export const findCategoriesById = async (
+  id: string,
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+  return client.category.findFirst({
     where: { id, userId },
   });
 };
