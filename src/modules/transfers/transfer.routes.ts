@@ -1,10 +1,17 @@
 import { Router } from "express";
 import { authenticate } from "../../middlewares/auth.middleware";
-import { createTransfer, getTransfers } from "./transfer.controller";
+import {
+  createTransfer,
+  getTransfers,
+  getTransferById,
+} from "./transfer.controller";
 
 const router = Router();
 
-router.post("/", authenticate, createTransfer);
-router.get("/", authenticate, getTransfers);
+router.use(authenticate);
+
+router.post("/", createTransfer);
+router.get("/", getTransfers);
+router.get("/:id", getTransferById);
 
 export default router;

@@ -2,7 +2,11 @@ import { Prisma } from "../../generated/prisma";
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/app-error";
 import { findAccountById } from "../accounts/account.repository";
-import { createTransferRecord, findAllTransfers } from "./transfer.repository";
+import {
+  createTransferRecord,
+  findAllTransfers,
+  findTransferById,
+} from "./transfer.repository";
 import { CreateTransferInput } from "./transfer.schema";
 
 export const create = async (userId: string, data: CreateTransferInput) => {
@@ -50,4 +54,8 @@ export const create = async (userId: string, data: CreateTransferInput) => {
 
 export const findAll = async (userId: string) => {
   return findAllTransfers(userId);
+};
+
+export const findById = async (transferId: string, userId: string) => {
+  return findTransferById(transferId, userId);
 };

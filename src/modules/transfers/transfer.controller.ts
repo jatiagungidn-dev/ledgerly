@@ -19,3 +19,11 @@ export const getTransfers = async (req: Request, res: Response) => {
   const transfers = await transferService.findAll(req.userId);
   return res.status(200).json({ transfers });
 };
+
+export const getTransferById = async (
+  req: Request<{ id: string }>,
+  res: Response,
+) => {
+  const transfer = await transferService.findById(req.params.id, req.userId);
+  return res.status(200).json({ status: "success", data: transfer });
+};

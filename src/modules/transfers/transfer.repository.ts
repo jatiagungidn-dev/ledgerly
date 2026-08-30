@@ -36,3 +36,12 @@ export const findAllTransfers = async (userId: string) => {
     orderBy: { occurredAt: "desc" },
   });
 };
+
+export const findTransferById = async (transferId: string, userId: string) => {
+  return prisma.transfer.findFirst({
+    where: {
+      id: transferId,
+      OR: [{ fromAccount: { userId } }, { toAccount: { userId } }],
+    },
+  });
+};

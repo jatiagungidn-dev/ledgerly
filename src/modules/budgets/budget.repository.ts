@@ -61,6 +61,7 @@ export const findOverLappingBudget = async (
     categoryId: string;
     periodStart: Date;
     periodEnd: Date;
+    excludeBudgetId?: string;
   },
   tx?: Prisma.TransactionClient,
 ) => {
@@ -70,12 +71,51 @@ export const findOverLappingBudget = async (
     where: {
       userId: data.userId,
       categoryId: data.categoryId,
+
+      ...(data.excludeBudgetId && {
+        id: {
+          not: data.excludeBudgetId,
+        },
+      }),
+
       periodStart: {
         lt: data.periodEnd,
       },
+
       periodEnd: {
         gt: data.periodStart,
       },
+    },
+  });
+};
+
+export const updateBudgetRecord = async (
+  budgetId: string,
+  userId: string,
+  data: {
+    amount?: Prisma.Decimal;
+    categoryId?: string;
+    periodStart?: string;
+    periodEnd?: string;
+  },
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.budget.updateMany({ where: { id: budgetId, userId }, data });
+};
+
+export const deleteBudgetRecord = async (
+  budgetId: string,
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.budget.deleteMany({
+    where: {
+      id: budgetId,
+      userId,
     },
   });
 };
