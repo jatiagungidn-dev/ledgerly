@@ -10,7 +10,10 @@ import {
 
 export const create = async (
   userId: string,
-  data: { name: string; type: "INCOME" | "EXPENSE" },
+  data: {
+    name: string;
+    type: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE";
+  },
 ) => {
   const existingCategory = await findCategoryByName(data.name, userId);
 

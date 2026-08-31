@@ -1,21 +1,24 @@
 import { Prisma } from "../../generated/prisma";
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/app-error";
-import { findAccountById, updateAccount } from "../accounts/account.repository";
-import { createTransactionRecord } from "./transaction.repository";
+import { calculateAccountBalance } from "../accounts/account.repository";
 import { CreateTransactionInput } from "./transaction.schema";
 
 export const create = async (userId: string, data: CreateTransactionInput) => {
   const amountDecimal = new Prisma.Decimal(data.amount);
 
   return prisma.$transaction(async (tx) => {
-    const account = await findAccountById(data.accountId, userId, tx);
+    const account = await tx.account.findFirst({
+      where: { id: data.accountId, userId },
+    });
 
     if (!account) {
       throw new AppError(404, "Account not found");
     }
 
-    if (data.type === "EXPENSE" && account.balance.lessThan(amountDecimal)) {
+    const currentBalance = await calculateAccountBalance(data.accountId, tx);
+
+    if (data.type === "EXPENSE" && currentBalance.lessThan(amountDecimal)) {
       throw new AppError(400, "Insufficient account balance");
     }
 
@@ -33,45 +36,59 @@ export const create = async (userId: string, data: CreateTransactionInput) => {
       }
     }
 
-    const transaction = await createTransactionRecord(
-      {
-        accountId: data.accountId,
-        categoryId: data.categoryId,
-        type: data.type,
+    const entries = [];
+
+    if (data.type === "EXPENSE") {
+      (entries.push({
+        account: { connect: { id: data.accountId } },
+        type: "CREDIT" as const,
         amount: amountDecimal,
-        description: data.description,
+      }),
+        entries.push({
+          account: { connect: { id: data.categoryId } },
+          type: "DEBIT" as const,
+          amount: amountDecimal,
+        }));
+    } else {
+      (entries.push({
+        account: { connect: { id: data.accountId } },
+        type: "DEBIT" as const,
+        amount: amountDecimal,
+      }),
+        entries.push({
+          account: { connect: { id: data.categoryId } },
+          type: "CREDIT" as const,
+          amount: amountDecimal,
+        }));
+    }
+
+    return tx.journal.create({
+      data: {
+        userId,
+        idempotencyKey: `tx_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        description: data.description ?? null,
         occurredAt: data.occurredAt,
+        entries: {
+          create: entries,
+        },
       },
-      tx,
-    );
-
-    const balanceAdjustment =
-      data.type === "INCOME"
-        ? { increment: amountDecimal }
-        : { decrement: amountDecimal };
-
-    await tx.account.update({
-      where: { id: data.accountId },
-      data: { balance: balanceAdjustment },
+      include: {
+        entries: true,
+      },
     });
-
-    return transaction;
   });
 };
 
 export const findAll = async (userId: string) => {
-  return prisma.transaction.findMany({
+  return prisma.journal.findMany({
     where: {
-      account: {
-        userId,
-      },
+      userId,
     },
     include: {
-      account: {
-        select: { id: true, name: true, currency: true },
-      },
-      category: {
-        select: { id: true, name: true, type: true },
+      entries: {
+        include: {
+          account: { select: { id: true, name: true, currency: true } },
+        },
       },
     },
     orderBy: {
@@ -81,26 +98,23 @@ export const findAll = async (userId: string) => {
 };
 
 export const findById = async (id: string, userId: string) => {
-  const transaction = await prisma.transaction.findFirst({
+  const journal = await prisma.journal.findFirst({
     where: {
       id,
-      account: {
-        userId,
-      },
+      userId,
     },
     include: {
-      account: {
-        select: { id: true, name: true, currency: true },
-      },
-      category: {
-        select: { id: true, name: true, type: true },
+      entries: {
+        include: {
+          account: { select: { id: true, name: true, currency: true } },
+        },
       },
     },
   });
 
-  if (!transaction) {
-    throw new AppError(404, "Transaction not found");
+  if (!journal) {
+    throw new AppError(404, "Transaction journal not found");
   }
 
-  return transaction;
+  return journal;
 };

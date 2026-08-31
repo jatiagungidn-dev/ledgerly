@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createAccountSchema, updateAccountSchema } from "./account.schema.js";
+import { createAccountSchema } from "./account.schema.js";
 import * as accountService from "./account.service.js";
 
 export const createAccount = async (req: Request, res: Response) => {

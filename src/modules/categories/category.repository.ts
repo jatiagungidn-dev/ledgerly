@@ -3,7 +3,10 @@ import { prisma } from "../../config/prisma";
 
 export const createCategory = async (
   userId: string,
-  data: { name: string; type: "INCOME" | "EXPENSE" },
+  data: {
+    name: string;
+    type: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE";
+  },
 ) => {
   return prisma.category.create({ data: { ...data, userId } });
 };

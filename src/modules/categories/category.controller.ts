@@ -15,7 +15,12 @@ export const createCategory = async (req: Request, res: Response) => {
     });
   }
 
-  const category = await categoryService.create(req.userId, result.data);
+  const payload = {
+    ...result.data,
+    type: result.data.type === "INCOME" ? "REVENUE" : result.data.type,
+  } as const;
+
+  const category = await categoryService.create(req.userId, payload);
 
   return res.status(201).json({
     category,

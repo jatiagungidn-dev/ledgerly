@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createTransactionSchema = z.object({
-  type: z.enum(["INCOME", "EXPENSE"]),
+  type: z.enum(["ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"]),
   amount: z.coerce
     .number()
     .positive({ message: "Amount must be greater than zero" }),
