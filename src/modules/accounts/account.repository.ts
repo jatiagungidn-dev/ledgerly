@@ -3,7 +3,11 @@ import { prisma } from "../../config/prisma";
 
 export const createAccount = async (
   userId: string,
-  data: { name: string; type: "CASH" | "BANK" | "E_WALLET"; currency: string },
+  data: {
+    name: string;
+    type: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE";
+    currency: string;
+  },
   tx?: Prisma.TransactionClient,
 ) => {
   const client = tx || prisma;
@@ -43,4 +47,30 @@ export const deleteAccount = async (
 ) => {
   const client = tx || prisma;
   return client.account.deleteMany({ where: { id, userId } });
+};
+
+export const calculateAccountBalance = async (
+  accountId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  const aggregations = await client.ledgerEntry.groupBy({
+    by: ["type"],
+    where: { accountId },
+    _sum: { amount: true },
+  });
+
+  let totalDebit = new Prisma.Decimal(0);
+  let totalCredit = new Prisma.Decimal(0);
+
+  for (const agg of aggregations) {
+    if (agg.type === "DEBIT") {
+      totalDebit = agg._sum.amount ?? new Prisma.Decimal(0);
+    } else if (agg.type === "CREDIT") {
+      totalCredit = agg._sum.amount ?? new Prisma.Decimal(0);
+    }
+  }
+
+  return totalDebit.minus(totalCredit);
 };

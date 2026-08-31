@@ -5,17 +5,30 @@ import {
   findAccountByUserId,
   updateAccount,
   deleteAccount,
+  calculateAccountBalance,
 } from "./account.repository";
 
 export const create = async (
   userId: string,
-  data: { name: string; type: "CASH" | "BANK" | "E_WALLET"; currency: string },
+  data: {
+    name: string;
+    type: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE";
+    currency: string;
+  },
 ) => {
   return createAccount(userId, data);
 };
 
 export const findAll = async (userId: string) => {
-  return findAccountByUserId(userId);
+  const accounts = await findAccountByUserId(userId);
+
+  return Promise.all(
+    accounts.map(async (account) => {
+      const balance = await calculateAccountBalance(account.id);
+
+      return { ...account, balance };
+    }),
+  );
 };
 
 export const findById = async (id: string, userId: string) => {
@@ -25,7 +38,9 @@ export const findById = async (id: string, userId: string) => {
     throw new AppError(404, "Account not found");
   }
 
-  return account;
+  const balance = await calculateAccountBalance(account.id);
+
+  return { ...account, balance };
 };
 
 export const update = async (id: string, userId: string, name: string) => {
