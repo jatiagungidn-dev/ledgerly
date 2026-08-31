@@ -1,8 +1,8 @@
 -- CreateEnum
-CREATE TYPE "AccountType" AS ENUM ('CASH', 'BANK', 'E_WALLET');
+CREATE TYPE "AccountType" AS ENUM ('ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE');
 
 -- CreateEnum
-CREATE TYPE "TransactionType" AS ENUM ('INCOME', 'EXPENSE');
+CREATE TYPE "EntryType" AS ENUM ('CREDIT', 'DEBIT');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -20,7 +20,6 @@ CREATE TABLE "Account" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "type" "AccountType" NOT NULL,
-    "balance" DECIMAL(19,4) NOT NULL DEFAULT 0,
     "currency" TEXT NOT NULL DEFAULT 'IDR',
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,7 +32,7 @@ CREATE TABLE "Account" (
 CREATE TABLE "Category" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "type" "TransactionType" NOT NULL,
+    "type" "AccountType" NOT NULL,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -42,31 +41,27 @@ CREATE TABLE "Category" (
 );
 
 -- CreateTable
-CREATE TABLE "Transaction" (
+CREATE TABLE "Journal" (
     "id" TEXT NOT NULL,
-    "type" "TransactionType" NOT NULL,
-    "amount" DECIMAL(19,4) NOT NULL,
+    "idempotencyKey" TEXT NOT NULL,
     "description" TEXT,
-    "accountId" TEXT NOT NULL,
-    "categoryId" TEXT,
     "occurredAt" TIMESTAMP(3) NOT NULL,
+    "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Journal_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Transfer" (
+CREATE TABLE "LedgerEntry" (
     "id" TEXT NOT NULL,
     "amount" DECIMAL(19,4) NOT NULL,
-    "description" TEXT,
-    "fromAccountId" TEXT NOT NULL,
-    "toAccountId" TEXT NOT NULL,
-    "occurredAt" TIMESTAMP(3) NOT NULL,
+    "type" "EntryType" NOT NULL,
+    "journalId" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Transfer_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "LedgerEntry_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -96,22 +91,19 @@ CREATE INDEX "Category_userId_idx" ON "Category"("userId");
 CREATE UNIQUE INDEX "Category_userId_name_key" ON "Category"("userId", "name");
 
 -- CreateIndex
-CREATE INDEX "Transaction_accountId_idx" ON "Transaction"("accountId");
+CREATE UNIQUE INDEX "Journal_idempotencyKey_key" ON "Journal"("idempotencyKey");
 
 -- CreateIndex
-CREATE INDEX "Transaction_categoryId_idx" ON "Transaction"("categoryId");
+CREATE INDEX "Journal_userId_idx" ON "Journal"("userId");
 
 -- CreateIndex
-CREATE INDEX "Transaction_occurredAt_idx" ON "Transaction"("occurredAt");
+CREATE INDEX "Journal_occurredAt_idx" ON "Journal"("occurredAt");
 
 -- CreateIndex
-CREATE INDEX "Transfer_fromAccountId_idx" ON "Transfer"("fromAccountId");
+CREATE INDEX "LedgerEntry_accountId_idx" ON "LedgerEntry"("accountId");
 
 -- CreateIndex
-CREATE INDEX "Transfer_toAccountId_idx" ON "Transfer"("toAccountId");
-
--- CreateIndex
-CREATE INDEX "Transfer_occurredAt_idx" ON "Transfer"("occurredAt");
+CREATE INDEX "LedgerEntry_journalId_idx" ON "LedgerEntry"("journalId");
 
 -- CreateIndex
 CREATE INDEX "Budget_userId_idx" ON "Budget"("userId");
@@ -126,16 +118,13 @@ ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "Category" ADD CONSTRAINT "Category_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Journal" ADD CONSTRAINT "Journal_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "LedgerEntry" ADD CONSTRAINT "LedgerEntry_journalId_fkey" FOREIGN KEY ("journalId") REFERENCES "Journal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Transfer" ADD CONSTRAINT "Transfer_fromAccountId_fkey" FOREIGN KEY ("fromAccountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Transfer" ADD CONSTRAINT "Transfer_toAccountId_fkey" FOREIGN KEY ("toAccountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "LedgerEntry" ADD CONSTRAINT "LedgerEntry_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Budget" ADD CONSTRAINT "Budget_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

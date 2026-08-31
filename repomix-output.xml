@@ -1,0 +1,2260 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+prisma/
+  migrations/
+    20260823015921_init/
+      migration.sql
+    migration_lock.toml
+  schema.prisma
+src/
+  config/
+    env.ts
+    prisma.ts
+  middlewares/
+    auth.middleware.ts
+    error.middleware.ts
+  modules/
+    accounts/
+      account.controller.ts
+      account.repository.ts
+      account.routes.ts
+      account.schema.ts
+      account.service.ts
+    auth/
+      auth.controller.ts
+      auth.routes.ts
+      auth.schema.ts
+      auth.service.ts
+    budgets/
+      budget.controller.ts
+      budget.repository.ts
+      budget.routes.ts
+      budget.schema.ts
+      budget.service.ts
+    categories/
+      category.controller.ts
+      category.repository.ts
+      category.routes.ts
+      category.schema.ts
+      category.service.ts
+    transactions/
+      transaction.controller.ts
+      transaction.repository.ts
+      transaction.routes.ts
+      transaction.schema.ts
+      transaction.service.ts
+    transfers/
+      transfer.controller.ts
+      transfer.repository.ts
+      transfer.routes.ts
+      transfer.schema.ts
+      transfer.service.ts
+    users/
+      user.repository.ts
+      user.types.ts
+  types/
+    express.d.ts
+    prisma.ts
+  utils/
+    app-error.ts
+  app.ts
+  server.ts
+.env.example
+.gitignore
+package.json
+prisma.config.ts
+README.md
+skills-lock.json
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="prisma/migrations/20260823015921_init/migration.sql">
+-- CreateEnum
+CREATE TYPE "AccountType" AS ENUM ('CASH', 'BANK', 'E_WALLET');
+
+-- CreateEnum
+CREATE TYPE "TransactionType" AS ENUM ('INCOME', 'EXPENSE');
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Account" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "type" "AccountType" NOT NULL,
+    "balance" DECIMAL(19,4) NOT NULL DEFAULT 0,
+    "currency" TEXT NOT NULL DEFAULT 'IDR',
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Account_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Category" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "type" "TransactionType" NOT NULL,
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Transaction" (
+    "id" TEXT NOT NULL,
+    "type" "TransactionType" NOT NULL,
+    "amount" DECIMAL(19,4) NOT NULL,
+    "description" TEXT,
+    "accountId" TEXT NOT NULL,
+    "categoryId" TEXT,
+    "occurredAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Transfer" (
+    "id" TEXT NOT NULL,
+    "amount" DECIMAL(19,4) NOT NULL,
+    "description" TEXT,
+    "fromAccountId" TEXT NOT NULL,
+    "toAccountId" TEXT NOT NULL,
+    "occurredAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Transfer_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Budget" (
+    "id" TEXT NOT NULL,
+    "amount" DECIMAL(19,4) NOT NULL,
+    "userId" TEXT NOT NULL,
+    "categoryId" TEXT NOT NULL,
+    "periodStart" TIMESTAMP(3) NOT NULL,
+    "periodEnd" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Budget_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE INDEX "Account_userId_idx" ON "Account"("userId");
+
+-- CreateIndex
+CREATE INDEX "Category_userId_idx" ON "Category"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Category_userId_name_key" ON "Category"("userId", "name");
+
+-- CreateIndex
+CREATE INDEX "Transaction_accountId_idx" ON "Transaction"("accountId");
+
+-- CreateIndex
+CREATE INDEX "Transaction_categoryId_idx" ON "Transaction"("categoryId");
+
+-- CreateIndex
+CREATE INDEX "Transaction_occurredAt_idx" ON "Transaction"("occurredAt");
+
+-- CreateIndex
+CREATE INDEX "Transfer_fromAccountId_idx" ON "Transfer"("fromAccountId");
+
+-- CreateIndex
+CREATE INDEX "Transfer_toAccountId_idx" ON "Transfer"("toAccountId");
+
+-- CreateIndex
+CREATE INDEX "Transfer_occurredAt_idx" ON "Transfer"("occurredAt");
+
+-- CreateIndex
+CREATE INDEX "Budget_userId_idx" ON "Budget"("userId");
+
+-- CreateIndex
+CREATE INDEX "Budget_categoryId_idx" ON "Budget"("categoryId");
+
+-- AddForeignKey
+ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Category" ADD CONSTRAINT "Category_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transfer" ADD CONSTRAINT "Transfer_fromAccountId_fkey" FOREIGN KEY ("fromAccountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transfer" ADD CONSTRAINT "Transfer_toAccountId_fkey" FOREIGN KEY ("toAccountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Budget" ADD CONSTRAINT "Budget_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Budget" ADD CONSTRAINT "Budget_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+</file>
+
+<file path="prisma/migrations/migration_lock.toml">
+# Please do not edit this file manually
+# It should be added in your version-control system (e.g., Git)
+provider = "postgresql"
+</file>
+
+<file path="src/config/prisma.ts">
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../generated/prisma/client";
+import { env } from "./env";
+
+const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
+
+export const prisma = new PrismaClient({ adapter });
+</file>
+
+<file path="src/middlewares/error.middleware.ts">
+import { Request, Response, NextFunction } from "express";
+
+import { AppError } from "../utils/app-error";
+import { env } from "../config/env";
+
+export const errorHandler = (
+  err: Error,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+) => {
+  console.error("Internal Server Error", err.stack);
+
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      status: "fail",
+      message: err.message,
+    });
+  }
+
+  const message =
+    env.NODE_ENV === "production"
+      ? "Internal Server Error"
+      : err.message || "Something went wrong";
+
+  return res.status(500).json({ status: "error", message });
+};
+</file>
+
+<file path="src/modules/accounts/account.controller.ts">
+import { Request, Response } from "express";
+import { createAccountSchema, updateAccountSchema } from "./account.schema.js";
+import * as accountService from "./account.service.js";
+
+export const createAccount = async (req: Request, res: Response) => {
+  const result = createAccountSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      message: "Invalid request body",
+      errors: result.error.flatten().fieldErrors,
+    });
+  }
+
+  const account = await accountService.create(req.userId, result.data);
+
+  return res.status(201).json({
+    account,
+  });
+};
+
+export const getAccounts = async (req: Request, res: Response) => {
+  const accounts = await accountService.findAll(req.userId);
+
+  return res.status(200).json({
+    accounts,
+  });
+};
+
+export const getAccountById = async (
+  req: Request<{ id: string }>,
+  res: Response,
+) => {
+  const account = await accountService.findById(req.params.id, req.userId);
+
+  return res.status(200).json({
+    account,
+  });
+};
+</file>
+
+<file path="src/modules/accounts/account.routes.ts">
+import { Router } from "express";
+import { authenticate } from "../../middlewares/auth.middleware.js";
+import {
+  createAccount,
+  getAccountById,
+  getAccounts,
+} from "./account.controller.js";
+
+const router = Router();
+
+router.use(authenticate);
+
+router.post("/", createAccount);
+router.get("/", getAccounts);
+router.get("/:id", getAccountById);
+
+export default router;
+</file>
+
+<file path="src/modules/accounts/account.schema.ts">
+import { z } from "zod";
+
+export const createAccountSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  type: z.enum(["CASH", "BANK", "E_WALLET"]),
+  currency: z.string().trim().length(3).default("IDR"),
+});
+
+export const updateAccountSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+});
+</file>
+
+<file path="src/modules/accounts/account.service.ts">
+import { AppError } from "../../utils/app-error";
+import {
+  createAccount,
+  findAccountById,
+  findAccountByUserId,
+  updateAccount,
+  deleteAccount,
+} from "./account.repository";
+
+export const create = async (
+  userId: string,
+  data: { name: string; type: "CASH" | "BANK" | "E_WALLET"; currency: string },
+) => {
+  return createAccount(userId, data);
+};
+
+export const findAll = async (userId: string) => {
+  return findAccountByUserId(userId);
+};
+
+export const findById = async (id: string, userId: string) => {
+  const account = await findAccountById(id, userId);
+
+  if (!account) {
+    throw new AppError(404, "Account not found");
+  }
+
+  return account;
+};
+
+export const update = async (id: string, userId: string, name: string) => {
+  const result = await updateAccount(id, userId, name);
+
+  if (result.count === 0) {
+    throw new AppError(404, "Account not found");
+  }
+
+  return findAccountById(id, userId);
+};
+
+export const remove = async (id: string, userId: string) => {
+  const result = await deleteAccount(id, userId);
+
+  if (result.count === 0) {
+    throw new AppError(404, "Account not found");
+  }
+};
+</file>
+
+<file path="src/modules/auth/auth.schema.ts">
+import { z } from "zod";
+
+export const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(72),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+</file>
+
+<file path="src/modules/categories/category.controller.ts">
+import { Request, Response } from "express";
+import {
+  createCategorySchema,
+  updateCategorySchema,
+} from "./category.schema.js";
+import * as categoryService from "./category.service.js";
+
+export const createCategory = async (req: Request, res: Response) => {
+  const result = createCategorySchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      message: "Invalid request body",
+      errors: result.error.flatten().fieldErrors,
+    });
+  }
+
+  const category = await categoryService.create(req.userId, result.data);
+
+  return res.status(201).json({
+    category,
+  });
+};
+
+export const getCategories = async (req: Request, res: Response) => {
+  const categories = await categoryService.findAll(req.userId);
+
+  return res.status(200).json({
+    categories,
+  });
+};
+
+export const getCategoryById = async (
+  req: Request<{ id: string }>,
+  res: Response,
+) => {
+  const category = await categoryService.findById(req.params.id, req.userId);
+
+  return res.status(200).json({
+    category,
+  });
+};
+
+export const updateCategory = async (
+  req: Request<{ id: string }>,
+  res: Response,
+) => {
+  const result = updateCategorySchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      message: "Invalid request body",
+      errors: result.error.flatten().fieldErrors,
+    });
+  }
+
+  const category = await categoryService.update(
+    req.params.id,
+    req.userId,
+    result.data.name,
+  );
+
+  return res.status(200).json({
+    category,
+  });
+};
+
+export const deleteCategory = async (
+  req: Request<{ id: string }>,
+  res: Response,
+) => {
+  await categoryService.remove(req.params.id, req.userId);
+
+  return res.status(204).send();
+};
+</file>
+
+<file path="src/modules/categories/category.routes.ts">
+import { Router } from "express";
+import { authenticate } from "../../middlewares/auth.middleware.js";
+import {
+  createCategory,
+  deleteCategory,
+  getCategories,
+  getCategoryById,
+  updateCategory,
+} from "./category.controller.js";
+
+const router = Router();
+
+router.use(authenticate);
+
+router.post("/", createCategory);
+router.get("/", getCategories);
+router.get("/:id", getCategoryById);
+router.patch("/:id", updateCategory);
+router.delete("/:id", deleteCategory);
+
+export default router;
+</file>
+
+<file path="src/modules/categories/category.schema.ts">
+import { z } from "zod";
+
+export const createCategorySchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  type: z.enum(["INCOME", "EXPENSE"]),
+});
+
+export const updateCategorySchema = z.object({
+  name: z.string().trim().min(1).max(100),
+});
+</file>
+
+<file path="src/modules/categories/category.service.ts">
+import { AppError } from "../../utils/app-error";
+import {
+  createCategory,
+  findCategoriesByUserId,
+  findCategoriesById,
+  updateCategory,
+  deleteCategory,
+  findCategoryByName,
+} from "./category.repository";
+
+export const create = async (
+  userId: string,
+  data: { name: string; type: "INCOME" | "EXPENSE" },
+) => {
+  const existingCategory = await findCategoryByName(data.name, userId);
+
+  if (existingCategory) {
+    throw new AppError(409, "Category already exists");
+  }
+
+  return createCategory(userId, data);
+};
+
+export const findAll = async (userId: string) => {
+  return findCategoriesByUserId(userId);
+};
+
+export const findById = async (id: string, userId: string) => {
+  const category = await findCategoriesById(id, userId);
+
+  if (!category) {
+    throw new AppError(404, "Category not found");
+  }
+
+  return category;
+};
+
+export const update = async (id: string, userId: string, name: string) => {
+  const result = await updateCategory(id, userId, name);
+
+  if (result.count === 0) {
+    throw new AppError(404, "Category not found");
+  }
+
+  return findCategoriesById(id, userId);
+};
+
+export const remove = async (id: string, userId: string) => {
+  const result = await deleteCategory(id, userId);
+
+  if (result.count === 0) {
+    throw new AppError(404, "Category not found");
+  }
+};
+</file>
+
+<file path="src/modules/transactions/transaction.controller.ts">
+import { Request, Response } from "express";
+import { createTransactionSchema } from "./transaction.schema.js";
+import * as transactionService from "./transaction.service.js";
+
+export const createTransaction = async (req: Request, res: Response) => {
+  const result = createTransactionSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      message: "Invalid request body",
+      errors: result.error.flatten().fieldErrors,
+    });
+  }
+
+  const transaction = await transactionService.create(req.userId, result.data);
+
+  return res.status(201).json({
+    transaction,
+  });
+};
+
+export const getTransactions = async (req: Request, res: Response) => {
+  const transactions = await transactionService.findAll(req.userId);
+
+  return res.status(200).json({
+    transactions,
+  });
+};
+
+export const getTransactionById = async (
+  req: Request<{ id: string }>,
+  res: Response,
+) => {
+  const transaction = await transactionService.findById(
+    req.params.id,
+    req.userId,
+  );
+
+  return res.status(200).json({
+    transaction,
+  });
+};
+</file>
+
+<file path="src/modules/users/user.repository.ts">
+import { prisma } from "../../config/prisma";
+
+export const findUserByEmail = async (email: string) => {
+  return prisma.user.findUnique({ where: { email } });
+};
+
+export const findUserById = async (id: string) => {
+  return prisma.user.findUnique({ where: { id } });
+};
+
+export const createUser = async (email: string, passwordHash: string) => {
+  return prisma.user.create({ data: { email, passwordHash } });
+};
+</file>
+
+<file path="src/modules/users/user.types.ts">
+export type PublicUser = {
+  id: string;
+  email: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+</file>
+
+<file path="src/types/express.d.ts">
+import * as express from "express";
+
+declare global {
+	namespace Express {
+		interface Request {
+			userId: string;
+		}
+	}
+}
+
+export {};
+</file>
+
+<file path="src/types/prisma.ts">
+import { PrismaClient } from "../generated/prisma/client";
+
+export type PrismaTransactionClient = Parameters<
+  Parameters<PrismaClient["$transaction"]>[0]
+>;
+</file>
+
+<file path="src/utils/app-error.ts">
+export class AppError extends Error {
+  constructor(
+    public statusCode: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "AppError";
+  }
+}
+</file>
+
+<file path=".env.example">
+NODE_ENV=development
+PORT=3000
+DATABASE_URL=
+JWT_SECRET=
+</file>
+
+<file path="prisma.config.ts">
+import "dotenv/config";
+import { defineConfig, env } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
+});
+</file>
+
+<file path="README.md">
+# ledgerly
+A personal finance and digital wallet backend built with TypeScript, PostgreSQL, and Prisma.
+</file>
+
+<file path="skills-lock.json">
+{
+  "version": 1,
+  "skills": {
+    "prisma-cli": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-cli/SKILL.md",
+      "computedHash": "129e77cba93984b88d66cf0f66d5788f5487431f17f189a1ab2d839976874e3b"
+    },
+    "prisma-client-api": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-client-api/SKILL.md",
+      "computedHash": "cbbabff961c8e16b2d59f8c1ffb4e7e20be52154e778ab95121e0211d6d09969"
+    },
+    "prisma-compute": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-compute/SKILL.md",
+      "computedHash": "8d6053aefdf0b7c80e981e93c1300d617292efb6a5b0bdd826bc85e47431f3e3"
+    },
+    "prisma-database-setup": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-database-setup/SKILL.md",
+      "computedHash": "6a991a2530a6da7131e3fc71c353e8278702d0146b8b6e1d2fdfc2d3d0a21bd2"
+    },
+    "prisma-driver-adapter-implementation": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-driver-adapter-implementation/SKILL.md",
+      "computedHash": "cc487f1bf36f616ddb3a9478b3527d288dd706d77a9e5dbee9af52dca1eee8e4"
+    },
+    "prisma-mongodb-upgrade": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-mongodb-upgrade/SKILL.md",
+      "computedHash": "b94149ad5f1ec269dfd717b321538de6d39943b2ae6721a0d82302057f57ae18"
+    },
+    "prisma-postgres": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-postgres/SKILL.md",
+      "computedHash": "0422727e18019add9208b86ce862964025acc011ff31fba1d59a01b836bd6272"
+    },
+    "prisma-postgres-setup": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-postgres-setup/SKILL.md",
+      "computedHash": "5dbcf5a488d7cb7136340b86dcf781d6d92cf793f92c105ef644ac31ccac4d3b"
+    },
+    "prisma-upgrade-v7": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-upgrade-v7/SKILL.md",
+      "computedHash": "0e07dc2831f86cf27627df914db43d862b0fc75d72c1f9070434aab7940bad7c"
+    }
+  }
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true
+  },
+
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
+</file>
+
+<file path="src/config/env.ts">
+import { z } from "zod";
+import "dotenv/config";
+
+const envSchema = z.object({
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
+  PORT: z.coerce.number().int().positive().default(3000),
+  DATABASE_URL: z.url(),
+  JWT_SECRET: z.string().min(20, "JWT_SECRET must be at least 20 characters"),
+});
+
+const result = envSchema.safeParse(process.env);
+
+if (!result.success) {
+  console.error(
+    "Invalid environment variables:",
+    result.error.flatten().fieldErrors,
+  );
+  process.exit(1);
+}
+
+export const env = result.data;
+</file>
+
+<file path="src/middlewares/auth.middleware.ts">
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+
+import { env } from "../config/env";
+
+type JwtPayload = { sub: string };
+
+export const authenticate = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const authorization = req.headers.authorization;
+
+  if (!authorization) {
+    return res.status(401).json({
+      message: "Authentication required",
+    });
+  }
+
+  const [scheme, token] = authorization.split(" ");
+
+  if (scheme !== "Bearer" || !token) {
+    return res.status(401).json({
+      message: "Invalid authorization header",
+    });
+  }
+
+  try {
+    const payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+
+    req.userId = payload.sub;
+
+    return next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+</file>
+
+<file path="src/modules/accounts/account.repository.ts">
+import { Prisma } from "../../generated/prisma";
+import { prisma } from "../../config/prisma";
+
+export const createAccount = async (
+  userId: string,
+  data: { name: string; type: "CASH" | "BANK" | "E_WALLET"; currency: string },
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+  return client.account.create({ data: { ...data, userId } });
+};
+
+export const findAccountByUserId = async (userId: string) => {
+  return prisma.account.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+export const findAccountById = async (
+  id: string,
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+  return client.account.findFirst({ where: { id, userId } });
+};
+
+export const updateAccount = async (
+  id: string,
+  userId: string,
+  name: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+  return client.account.updateMany({ where: { id, userId }, data: { name } });
+};
+
+export const deleteAccount = async (
+  id: string,
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+  return client.account.deleteMany({ where: { id, userId } });
+};
+</file>
+
+<file path="src/modules/auth/auth.routes.ts">
+import { Router } from "express";
+import { registerController, loginController } from "./auth.controller";
+
+const router = Router();
+
+router.post("/register", registerController);
+router.post("/login", loginController);
+
+export default router;
+</file>
+
+<file path="src/modules/budgets/budget.controller.ts">
+import { NextFunction, Request, Response } from "express";
+import { createBudgetSchema, updateBudgetSchema } from "./budget.schema";
+import * as budgetService from "./budget.service";
+
+export const createBudget = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = createBudgetSchema.safeParse(req.body);
+
+    if (!result.success) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Invalid request body",
+        error: result.error.flatten().fieldErrors,
+      });
+    }
+
+    const budget = await budgetService.create(req.userId, result.data);
+
+    return res.status(201).json({
+      status: "success",
+      message: "Budget created successfully",
+      data: budget,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getBudgets = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const budgets = await budgetService.findAll(req.userId);
+
+    return res.status(200).json({ status: "success", data: { budgets } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getBudgetById = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const budget = await budgetService.findById(req.params.id, req.userId);
+
+    return res.status(200).json({ status: "success", data: budget });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateBudget = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = updateBudgetSchema.safeParse(req.body);
+
+    if (!result.success) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Invalid request body",
+        error: result.error.flatten().fieldErrors,
+      });
+    }
+
+    const budget = await budgetService.update(
+      req.params.id,
+      req.userId,
+      result.data,
+    );
+
+    return res.status(200).json({
+      status: "success",
+      message: "Budget updated successfully",
+      data: budget,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteBudget = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await budgetService.remove(req.params.id, req.userId);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Budget deleted successfully",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+</file>
+
+<file path="src/modules/budgets/budget.repository.ts">
+import { Prisma } from "../../generated/prisma";
+import { prisma } from "../../config/prisma";
+
+export const createBudgetRecord = async (
+  data: {
+    amount: Prisma.Decimal;
+    userId: string;
+    categoryId: string;
+    periodStart: Date;
+    periodEnd: Date;
+  },
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.budget.create({
+    data: {
+      amount: data.amount,
+      userId: data.userId,
+      categoryId: data.categoryId,
+      periodStart: data.periodStart,
+      periodEnd: data.periodEnd,
+    },
+  });
+};
+
+export const findBudgetById = async (
+  budgetId: string,
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.budget.findFirst({
+    where: {
+      id: budgetId,
+      userId,
+    },
+  });
+};
+
+export const findBudget = async (
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.budget.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      periodStart: "desc",
+    },
+  });
+};
+
+export const findOverLappingBudget = async (
+  data: {
+    userId: string;
+    categoryId: string;
+    periodStart: Date;
+    periodEnd: Date;
+    excludeBudgetId?: string;
+  },
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.budget.findFirst({
+    where: {
+      userId: data.userId,
+      categoryId: data.categoryId,
+
+      ...(data.excludeBudgetId && {
+        id: {
+          not: data.excludeBudgetId,
+        },
+      }),
+
+      periodStart: {
+        lt: data.periodEnd,
+      },
+
+      periodEnd: {
+        gt: data.periodStart,
+      },
+    },
+  });
+};
+
+export const updateBudgetRecord = async (
+  budgetId: string,
+  userId: string,
+  data: {
+    amount?: Prisma.Decimal;
+    categoryId?: string;
+    periodStart?: string;
+    periodEnd?: string;
+  },
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.budget.updateMany({ where: { id: budgetId, userId }, data });
+};
+
+export const deleteBudgetRecord = async (
+  budgetId: string,
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.budget.deleteMany({
+    where: {
+      id: budgetId,
+      userId,
+    },
+  });
+};
+</file>
+
+<file path="src/modules/budgets/budget.routes.ts">
+import { Router } from "express";
+import { authenticate } from "../../middlewares/auth.middleware";
+import {
+  createBudget,
+  deleteBudget,
+  getBudgetById,
+  getBudgets,
+  updateBudget,
+} from "./budget.controller";
+
+const router = Router();
+
+router.use(authenticate);
+
+router.post("/", createBudget);
+router.get("/", getBudgets);
+router.get("/:id", getBudgetById);
+router.patch("/:id", updateBudget);
+router.delete("/:id", deleteBudget);
+
+export default router;
+</file>
+
+<file path="src/modules/budgets/budget.schema.ts">
+import { z } from "zod";
+
+export const createBudgetSchema = z.object({
+  amount: z.coerce
+    .number()
+    .positive({ message: "Amount must be greater than zero" }),
+
+  categoryId: z.string().uuid({
+    message: "Invalid category ID",
+  }),
+
+  periodStart: z.coerce.date(),
+  periodEnd: z.coerce.date(),
+});
+
+export const updateBudgetSchema = z.object({
+  amount: z.coerce
+    .number()
+    .positive({ message: "Amount must be greater than zero" })
+    .optional(),
+
+  categoryId: z
+    .string()
+    .uuid({
+      message: "Invalid category ID",
+    })
+    .optional(),
+
+  periodStart: z.coerce.date().optional(),
+  periodEnd: z.coerce.date().optional(),
+});
+
+export type CreateBudgetInput = z.infer<typeof createBudgetSchema>;
+export type UpdateBudgetInput = z.infer<typeof updateBudgetSchema>;
+</file>
+
+<file path="src/modules/budgets/budget.service.ts">
+import { Prisma } from "../../generated/prisma";
+import { prisma } from "../../config/prisma";
+import { AppError } from "../../utils/app-error";
+import {
+  createBudgetRecord,
+  findBudget,
+  findBudgetById,
+  findOverLappingBudget,
+  updateBudgetRecord,
+  deleteBudgetRecord,
+} from "./budget.repository";
+import { CreateBudgetInput, UpdateBudgetInput } from "./budget.schema";
+import { findCategoriesById } from "../categories/category.repository";
+
+export const create = async (userId: string, data: CreateBudgetInput) => {
+  const amountDecimal = new Prisma.Decimal(data.amount);
+
+  return prisma.$transaction(async (tx) => {
+    if (data.periodStart >= data.periodEnd) {
+      throw new AppError(400, "Period start must be before period end");
+    }
+
+    const category = await findCategoriesById(data.categoryId, userId, tx);
+
+    if (!category) {
+      throw new AppError(404, "Category not found");
+    }
+
+    if (category.type !== "EXPENSE") {
+      throw new AppError(
+        400,
+        "Budget can only be created for expense categories",
+      );
+    }
+
+    const overlappingBudget = await findOverLappingBudget(
+      {
+        userId,
+        categoryId: data.categoryId,
+        periodStart: data.periodStart,
+        periodEnd: data.periodEnd,
+      },
+      tx,
+    );
+
+    if (overlappingBudget) {
+      throw new AppError(
+        400,
+        "A budget already exists for this category during this period",
+      );
+    }
+
+    return createBudgetRecord(
+      {
+        amount: amountDecimal,
+        userId,
+        categoryId: data.categoryId,
+        periodStart: data.periodStart,
+        periodEnd: data.periodEnd,
+      },
+      tx,
+    );
+  });
+};
+
+export const findAll = async (userId: string) => {
+  return findBudget(userId);
+};
+
+export const findById = async (budgetId: string, userId: string) => {
+  const budget = await findBudgetById(budgetId, userId);
+
+  if (!budget) {
+    throw new AppError(404, "Budget not found");
+  }
+
+  return budget;
+};
+
+export const update = async (
+  budgetId: string,
+  userId: string,
+  data: UpdateBudgetInput,
+) => {
+  return prisma.$transaction(async (tx) => {
+    const existingBudget = await findBudgetById(budgetId, userId, tx);
+
+    if (!existingBudget) {
+      throw new AppError(404, "Budget not found");
+    }
+
+    const categoryId = data.categoryId ?? existingBudget.categoryId;
+
+    const periodStart = data.periodStart ?? existingBudget.periodStart;
+
+    const periodEnd = data.periodEnd ?? existingBudget.periodEnd;
+
+    if (periodStart >= periodEnd) {
+      throw new AppError(400, "Period start must be before period end");
+    }
+
+    const category = await findCategoriesById(categoryId, userId, tx);
+
+    if (!category) {
+      throw new AppError(404, "Category not found");
+    }
+
+    if (category.type !== "EXPENSE") {
+      throw new AppError(
+        400,
+        "Budget can only be created for expense categories",
+      );
+    }
+
+    const overlappingBudget = await findOverLappingBudget(
+      {
+        userId,
+        categoryId,
+        periodStart,
+        periodEnd,
+        excludeBudgetId: budgetId,
+      },
+      tx,
+    );
+
+    if (overlappingBudget) {
+      throw new AppError(
+        400,
+        "A budget already exists for this category during this period",
+      );
+    }
+
+    const updateData = {
+      ...(data.amount !== undefined && {
+        amount: new Prisma.Decimal(data.amount),
+      }),
+      ...(data.categoryId !== undefined && {
+        categoryId: data.categoryId,
+      }),
+      ...(data.periodStart !== undefined && {
+        // updateBudgetRecord expects periodStart as string
+        periodStart:
+          data.periodStart instanceof Date
+            ? data.periodStart.toISOString()
+            : (data.periodStart as unknown as string),
+      }),
+      ...(data.periodEnd !== undefined && {
+        // updateBudgetRecord expects periodEnd as string
+        periodEnd:
+          data.periodEnd instanceof Date
+            ? data.periodEnd.toISOString()
+            : (data.periodEnd as unknown as string),
+      }),
+    };
+
+    await updateBudgetRecord(budgetId, userId, updateData, tx);
+
+    return findBudgetById(budgetId, userId, tx);
+  });
+};
+
+export const remove = async (budgetId: string, userId: string) => {
+  const budget = await findBudgetById(budgetId, userId);
+
+  if (!budget) {
+    throw new AppError(404, "Budget not found");
+  }
+
+  await deleteBudgetRecord(budgetId, userId);
+};
+</file>
+
+<file path="src/modules/categories/category.repository.ts">
+import { Prisma } from "../../generated/prisma";
+import { prisma } from "../../config/prisma";
+
+export const createCategory = async (
+  userId: string,
+  data: { name: string; type: "INCOME" | "EXPENSE" },
+) => {
+  return prisma.category.create({ data: { ...data, userId } });
+};
+
+export const findCategoriesByUserId = async (userId: string) => {
+  return prisma.category.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+export const findCategoriesById = async (
+  id: string,
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+  return client.category.findFirst({
+    where: { id, userId },
+  });
+};
+
+export const updateCategory = async (
+  id: string,
+  userId: string,
+  name: string,
+) => {
+  return prisma.category.updateMany({ where: { id, userId }, data: { name } });
+};
+
+export const deleteCategory = async (id: string, userId: string) => {
+  return prisma.category.deleteMany({ where: { id, userId } });
+};
+
+export const findCategoryByName = async (name: string, userId: string) => {
+  return prisma.category.findUnique({
+    where: { userId_name: { name, userId } },
+  });
+};
+</file>
+
+<file path="src/modules/transactions/transaction.routes.ts">
+import { Router } from "express";
+import { authenticate } from "../../middlewares/auth.middleware";
+import {
+  createTransaction,
+  getTransactions,
+  getTransactionById,
+} from "./transaction.controller";
+
+const router = Router();
+
+router.post("/", authenticate, createTransaction);
+router.get("/", authenticate, getTransactions);
+router.get("/:id", authenticate, getTransactionById);
+
+export default router;
+</file>
+
+<file path="src/modules/transactions/transaction.schema.ts">
+import { z } from "zod";
+
+export const createTransactionSchema = z.object({
+  type: z.enum(["INCOME", "EXPENSE"]),
+  amount: z.coerce
+    .number()
+    .positive({ message: "Amount must be greater than zero" }),
+  description: z.string().trim().max(255).optional(),
+  accountId: z.string().uuid({ message: "Invalid account ID format" }),
+  categoryId: z
+    .string()
+    .uuid({ message: "Invalid category ID format" })
+    .optional(),
+  occurredAt: z.coerce.date(),
+});
+
+export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
+</file>
+
+<file path="src/modules/transactions/transaction.service.ts">
+import { Prisma } from "../../generated/prisma";
+import { prisma } from "../../config/prisma";
+import { AppError } from "../../utils/app-error";
+import { findAccountById, updateAccount } from "../accounts/account.repository";
+import { createTransactionRecord } from "./transaction.repository";
+import { CreateTransactionInput } from "./transaction.schema";
+
+export const create = async (userId: string, data: CreateTransactionInput) => {
+  const amountDecimal = new Prisma.Decimal(data.amount);
+
+  return prisma.$transaction(async (tx) => {
+    const account = await findAccountById(data.accountId, userId, tx);
+
+    if (!account) {
+      throw new AppError(404, "Account not found");
+    }
+
+    if (data.type === "EXPENSE" && account.balance.lessThan(amountDecimal)) {
+      throw new AppError(400, "Insufficient account balance");
+    }
+
+    if (data.categoryId) {
+      const category = await tx.category.findFirst({
+        where: { id: data.categoryId, userId },
+      });
+
+      if (!category) {
+        throw new AppError(404, "Category not found");
+      }
+
+      if (category.type !== data.type) {
+        throw new AppError(400, "Category type doesn't match transaction type");
+      }
+    }
+
+    const transaction = await createTransactionRecord(
+      {
+        accountId: data.accountId,
+        categoryId: data.categoryId,
+        type: data.type,
+        amount: amountDecimal,
+        description: data.description,
+        occurredAt: data.occurredAt,
+      },
+      tx,
+    );
+
+    const balanceAdjustment =
+      data.type === "INCOME"
+        ? { increment: amountDecimal }
+        : { decrement: amountDecimal };
+
+    await tx.account.update({
+      where: { id: data.accountId },
+      data: { balance: balanceAdjustment },
+    });
+
+    return transaction;
+  });
+};
+
+export const findAll = async (userId: string) => {
+  return prisma.transaction.findMany({
+    where: {
+      account: {
+        userId,
+      },
+    },
+    include: {
+      account: {
+        select: { id: true, name: true, currency: true },
+      },
+      category: {
+        select: { id: true, name: true, type: true },
+      },
+    },
+    orderBy: {
+      occurredAt: "desc",
+    },
+  });
+};
+
+export const findById = async (id: string, userId: string) => {
+  const transaction = await prisma.transaction.findFirst({
+    where: {
+      id,
+      account: {
+        userId,
+      },
+    },
+    include: {
+      account: {
+        select: { id: true, name: true, currency: true },
+      },
+      category: {
+        select: { id: true, name: true, type: true },
+      },
+    },
+  });
+
+  if (!transaction) {
+    throw new AppError(404, "Transaction not found");
+  }
+
+  return transaction;
+};
+</file>
+
+<file path="src/modules/transfers/transfer.controller.ts">
+import { Request, Response } from "express";
+import { createTransferSchema } from "./transfer.schema";
+import * as transferService from "./transfer.service";
+
+export const createTransfer = async (req: Request, res: Response) => {
+  const result = createTransferSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({
+      message: "Invalid request body",
+      errors: result.error.flatten().fieldErrors,
+    });
+  }
+
+  const transfer = await transferService.create(req.userId, result.data);
+  return res.status(201).json({ transfer });
+};
+
+export const getTransfers = async (req: Request, res: Response) => {
+  const transfers = await transferService.findAll(req.userId);
+  return res.status(200).json({ transfers });
+};
+
+export const getTransferById = async (
+  req: Request<{ id: string }>,
+  res: Response,
+) => {
+  const transfer = await transferService.findById(req.params.id, req.userId);
+  return res.status(200).json({ status: "success", data: transfer });
+};
+</file>
+
+<file path="src/modules/transfers/transfer.routes.ts">
+import { Router } from "express";
+import { authenticate } from "../../middlewares/auth.middleware";
+import {
+  createTransfer,
+  getTransfers,
+  getTransferById,
+} from "./transfer.controller";
+
+const router = Router();
+
+router.use(authenticate);
+
+router.post("/", createTransfer);
+router.get("/", getTransfers);
+router.get("/:id", getTransferById);
+
+export default router;
+</file>
+
+<file path="src/modules/transfers/transfer.schema.ts">
+import { z } from "zod";
+
+export const createTransferSchema = z
+  .object({
+    fromAccountId: z.string().uuid({ message: "Invalid source account ID" }),
+    toAccountId: z.string().uuid({ message: "Invalid destination account ID" }),
+    amount: z.coerce
+      .number()
+      .positive({ message: "Amount must be greater than zero" }),
+    description: z.string().trim().max(255).optional(),
+    occurredAt: z.coerce.date(),
+  })
+  .refine((data) => data.fromAccountId !== data.toAccountId, {
+    message: "Source and target account cannot be the same",
+    path: ["toAccountId"],
+  });
+
+export type CreateTransferInput = z.infer<typeof createTransferSchema>;
+</file>
+
+<file path="prisma/schema.prisma">
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+enum AccountType {
+  CASH
+  BANK
+  E_WALLET
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+
+  accounts   Account[]
+  categories Category[]
+  budgets    Budget[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id       String      @id @default(uuid())
+  name     String
+  type     AccountType
+  balance  Decimal     @default(0) @db.Decimal(19, 4)
+  currency String      @default("IDR")
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions      Transaction[]
+  outgoingTransfers Transfer[] @relation("FromAccount")
+  incomingTransfers Transfer[] @relation("ToAccount")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Category {
+  id   String          @id @default(uuid())
+  name String
+  type TransactionType
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+  budgets      Budget[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  type        TransactionType
+  amount      Decimal         @db.Decimal(19, 4)
+  description String?
+
+  accountId  String
+  categoryId String?
+
+  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  occurredAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([occurredAt])
+}
+
+model Transfer {
+  id          String  @id @default(uuid())
+  amount      Decimal @db.Decimal(19, 4)
+  description String?
+
+  fromAccountId String
+  toAccountId   String
+
+  fromAccount Account @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccount Account @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Cascade)
+
+  occurredAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([occurredAt])
+}
+
+model Budget {
+  id     String  @id @default(uuid())
+  amount Decimal @db.Decimal(19, 4)
+
+  userId     String
+  categoryId String
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  periodStart DateTime
+  periodEnd   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([categoryId])
+}
+</file>
+
+<file path="src/modules/auth/auth.controller.ts">
+import { Request, Response } from "express";
+import { registerSchema, loginSchema } from "./auth.schema";
+import { register, login } from "./auth.service";
+
+export const registerController = async (req: Request, res: Response) => {
+  const result = registerSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      message: "Invalid request body",
+      error: result.error.flatten().fieldErrors,
+    });
+  }
+
+  const user = await register(result.data.email, result.data.password);
+
+  return res.status(201).json({ user });
+};
+
+export const loginController = async (req: Request, res: Response) => {
+  const result = loginSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      message: "Invalid request body",
+      error: result.error.flatten().fieldErrors,
+    });
+  }
+
+  const token = await login(result.data.email, result.data.password);
+
+  return res.status(200).json({ token });
+};
+</file>
+
+<file path="src/modules/auth/auth.service.ts">
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+import { createUser, findUserByEmail } from "../users/user.repository";
+import { env } from "../../config/env";
+import { AppError } from "../../utils/app-error";
+
+export const register = async (email: string, password: string) => {
+  const existingUser = await findUserByEmail(email);
+
+  if (existingUser) {
+    throw new AppError(409, "Email already exists");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  const user = await createUser(email, passwordHash);
+
+  return {
+    id: user.id,
+    email: user.email,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+};
+
+export const login = async (email: string, password: string) => {
+  const user = await findUserByEmail(email);
+
+  const passwordMatches = user
+    ? await bcrypt.compare(password, user.passwordHash)
+    : false;
+
+  if (!user || !passwordMatches) {
+    throw new AppError(401, "Invalid email or password");
+  }
+
+  const token = jwt.sign({ sub: user.id }, env.JWT_SECRET, { expiresIn: "1d" });
+
+  return token;
+};
+</file>
+
+<file path="src/modules/transactions/transaction.repository.ts">
+import { PrismaClient, TransactionType, Prisma } from "../../generated/prisma";
+import { prisma } from "../../config/prisma";
+
+export const createTransactionRecord = async (
+  data: {
+    accountId: string;
+    categoryId?: string;
+    type: TransactionType;
+    amount: Prisma.Decimal;
+    description?: string;
+    occurredAt: Date;
+  },
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+  return client.transaction.create({
+    data: {
+      accountId: data.accountId,
+      categoryId: data.categoryId || null,
+      type: data.type,
+      amount: data.amount,
+      description: data.description || null,
+      occurredAt: data.occurredAt,
+    },
+  });
+};
+
+export const findAccountById = async (
+  accountId: string,
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  return prisma.account.findFirst({ where: { id: accountId, userId, tx } });
+};
+
+export const findCategoryById = async (categoryId: string, userId: string) => {
+  return prisma.category.findFirst({ where: { id: categoryId, userId } });
+};
+
+export const updateAccountBalance = async (
+  accountId: string,
+  amount: Prisma.Decimal,
+  type: TransactionType,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  const balancedAdjustment =
+    type === "INCOME" ? { increment: amount } : { decrement: amount };
+
+  return client.account.update({
+    where: { id: accountId },
+    data: { balance: balancedAdjustment },
+  });
+};
+</file>
+
+<file path="src/modules/transfers/transfer.repository.ts">
+import { Prisma } from "../../generated/prisma";
+import { prisma } from "../../config/prisma";
+
+export const createTransferRecord = async (
+  data: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: Prisma.Decimal;
+    description?: string;
+    occurredAt: Date;
+  },
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.transfer.create({
+    data: {
+      fromAccountId: data.fromAccountId,
+      toAccountId: data.toAccountId,
+      amount: data.amount,
+      description: data.description || null,
+      occurredAt: data.occurredAt,
+    },
+  });
+};
+
+export const findAllTransfers = async (userId: string) => {
+  return prisma.transfer.findMany({
+    where: {
+      OR: [{ fromAccount: { userId }, toAccount: { userId } }],
+    },
+    include: {
+      fromAccount: { select: { id: true, name: true, currency: true } },
+      toAccount: { select: { id: true, name: true, currency: true } },
+    },
+    orderBy: { occurredAt: "desc" },
+  });
+};
+
+export const findTransferById = async (transferId: string, userId: string) => {
+  return prisma.transfer.findFirst({
+    where: {
+      id: transferId,
+      OR: [{ fromAccount: { userId } }, { toAccount: { userId } }],
+    },
+  });
+};
+</file>
+
+<file path="src/modules/transfers/transfer.service.ts">
+import { Prisma } from "../../generated/prisma";
+import { prisma } from "../../config/prisma";
+import { AppError } from "../../utils/app-error";
+import { findAccountById } from "../accounts/account.repository";
+import {
+  createTransferRecord,
+  findAllTransfers,
+  findTransferById,
+} from "./transfer.repository";
+import { CreateTransferInput } from "./transfer.schema";
+
+export const create = async (userId: string, data: CreateTransferInput) => {
+  const amountDecimal = new Prisma.Decimal(data.amount);
+
+  return prisma.$transaction(async (tx) => {
+    const fromAccount = await findAccountById(data.fromAccountId, userId, tx);
+    if (!fromAccount) {
+      throw new AppError(404, "Source account not found");
+    }
+
+    if (fromAccount.balance.lessThan(amountDecimal)) {
+      throw new AppError(400, "Insufficient account balance");
+    }
+
+    const toAccount = await findAccountById(data.toAccountId, userId, tx);
+    if (!toAccount) {
+      throw new AppError(404, "Target account not found");
+    }
+
+    const transfer = await createTransferRecord(
+      {
+        fromAccountId: data.fromAccountId,
+        toAccountId: data.toAccountId,
+        amount: amountDecimal,
+        description: data.description,
+        occurredAt: data.occurredAt,
+      },
+      tx,
+    );
+
+    await tx.account.update({
+      where: { id: data.fromAccountId },
+      data: { balance: { decrement: amountDecimal } },
+    });
+
+    await tx.account.update({
+      where: { id: data.toAccountId },
+      data: { balance: { increment: amountDecimal } },
+    });
+
+    return transfer;
+  });
+};
+
+export const findAll = async (userId: string) => {
+  return findAllTransfers(userId);
+};
+
+export const findById = async (transferId: string, userId: string) => {
+  return findTransferById(transferId, userId);
+};
+</file>
+
+<file path=".gitignore">
+node_modules
+.env
+.vscode
+dist
+coverage
+/src/generated/prisma
+.agents
+.claude
+.windsurf
+</file>
+
+<file path="package.json">
+{
+  "name": "ledgerly",
+  "version": "1.0.0",
+  "description": "A personal finance and digital wallet backend built with TypeScript, PostgreSQL, and Prisma.",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jatiagungidn-dev/ledgerly.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jatiagungidn-dev/ledgerly/issues"
+  },
+  "homepage": "https://github.com/jatiagungidn-dev/ledgerly#readme",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
+    "pg": "^8.23.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^26.2.0",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "eslint": "^10.9.0",
+    "jest": "^30.4.2",
+    "prettier": "^3.9.6",
+    "prisma": "^7.9.1",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.12",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  }
+}
+</file>
+
+<file path="src/server.ts">
+import app from "./app.js";
+import { env } from "./config/env.js";
+import { prisma } from "./config/prisma.js";
+
+const server = app.listen(env.PORT, () => {
+  console.log(`Server is running on port ${env.PORT} [${env.NODE_ENV}]`);
+});
+
+const shutdown = async (signal: string) => {
+  console.log(`\nReceived signal ${signal}. Gracefully shutdown server...`);
+
+  await prisma.$disconnect();
+  server.close(async () => {
+    try {
+      console.log("Server closed successfully");
+      process.exit(0);
+    } catch (err) {
+      console.error("Error while shutting down server", err);
+      process.exit(1);
+    }
+  });
+
+  setTimeout(() => {
+    console.error("Forcefully shutting down due to timeout");
+    process.exit(1);
+  }, 10_000);
+};
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+</file>
+
+<file path="src/app.ts">
+import express, { Request, Response } from "express";
+
+import { prisma } from "./config/prisma";
+import authRouter from "./modules/auth/auth.routes";
+import accountRouter from "./modules/accounts/account.routes";
+import categoryRouter from "./modules/categories/category.routes";
+import transactionRouter from "./modules/transactions/transaction.routes";
+import transferRouter from "./modules/transfers/transfer.routes";
+import budgetRouter from "./modules/budgets/budget.routes";
+import { authenticate } from "./middlewares/auth.middleware";
+import { errorHandler } from "./middlewares/error.middleware";
+
+const app = express();
+app.use(express.json());
+
+app.get("/health", async (_req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+
+    res.status(200).json({
+      status: "success",
+      service: "Ledgerly",
+      database: "connected",
+      timestamp: new Date().toISOString(),
+    });
+  } catch {
+    res.status(503).json({
+      status: "error",
+      service: "Ledgerly",
+      database: "disconnected",
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+app.get("/api/me", authenticate, (req, res) => {
+  res.status(200).json({ userId: req.userId });
+});
+
+app.use("/api/auth", authRouter);
+
+app.use("/api/account", accountRouter);
+
+app.use("/api/category", categoryRouter);
+
+app.use("/api/transaction", transactionRouter);
+
+app.use("/api/transfer", transferRouter);
+
+app.use("/api/budget", budgetRouter);
+
+app.use((_req: Request, res: Response) => {
+  return res
+    .status(404)
+    .json({ status: "fail", message: "Cannot find the route here" });
+});
+
+app.use(errorHandler);
+
+export default app;
+</file>
+
+</files>

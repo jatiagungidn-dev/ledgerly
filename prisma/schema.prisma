@@ -8,24 +8,27 @@ datasource db {
 }
 
 enum AccountType {
-  CASH
-  BANK
-  E_WALLET
-}
-
-enum TransactionType {
-  INCOME
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
   EXPENSE
 }
 
+enum EntryType {
+  CREDIT
+  DEBIT
+}
+
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String @id @default(uuid())
+  email        String @unique
   passwordHash String
 
   accounts   Account[]
   categories Category[]
   budgets    Budget[]
+  journals   Journal[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -35,15 +38,12 @@ model Account {
   id       String      @id @default(uuid())
   name     String
   type     AccountType
-  balance  Decimal     @default(0) @db.Decimal(19, 4)
   currency String      @default("IDR")
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  transactions      Transaction[]
-  outgoingTransfers Transfer[] @relation("FromAccount")
-  incomingTransfers Transfer[] @relation("ToAccount")
+  entries LedgerEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -52,15 +52,14 @@ model Account {
 }
 
 model Category {
-  id   String          @id @default(uuid())
+  id   String      @id @default(uuid())
   name String
-  type TransactionType
+  type AccountType
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  transactions Transaction[]
-  budgets      Budget[]
+  budgets Budget[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -69,46 +68,38 @@ model Category {
   @@index([userId])
 }
 
-model Transaction {
-  id          String          @id @default(uuid())
-  type        TransactionType
-  amount      Decimal         @db.Decimal(19, 4)
-  description String?
+model Journal {
+  id             String   @id @default(uuid())
+  idempotencyKey String   @unique
+  description    String?
+  occurredAt     DateTime
 
-  accountId  String
-  categoryId String?
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-
-  occurredAt DateTime
+  entries LedgerEntry[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  @@index([accountId])
-  @@index([categoryId])
+  @@index([userId])
   @@index([occurredAt])
 }
 
-model Transfer {
-  id          String  @id @default(uuid())
-  amount      Decimal @db.Decimal(19, 4)
-  description String?
+model LedgerEntry {
+  id     String    @id @default(uuid())
+  amount Decimal   @db.Decimal(19, 4)
+  type   EntryType
 
-  fromAccountId String
-  toAccountId   String
+  journalId String
+  journal   Journal @relation(fields: [journalId], references: [id], onDelete: Cascade)
 
-  fromAccount Account @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: Cascade)
-  toAccount Account @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Cascade)
-
-  occurredAt DateTime
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
-  @@index([fromAccountId])
-  @@index([toAccountId])
-  @@index([occurredAt])
+  @@index([accountId])
+  @@index([journalId])
 }
 
 model Budget {
