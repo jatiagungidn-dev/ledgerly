@@ -14,8 +14,13 @@ export const createAccount = async (
   return client.account.create({ data: { ...data, userId } });
 };
 
-export const findAccountByUserId = async (userId: string) => {
-  return prisma.account.findMany({
+export const findAccountByUserId = async (
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.account.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
   });
@@ -55,6 +60,15 @@ export const calculateAccountBalance = async (
 ) => {
   const client = tx || prisma;
 
+  const account = await client.account.findUnique({
+    where: { id: accountId },
+    select: { type: true },
+  });
+
+  if (!account) {
+    return null;
+  }
+
   const aggregations = await client.ledgerEntry.groupBy({
     by: ["type"],
     where: { accountId },
@@ -72,5 +86,28 @@ export const calculateAccountBalance = async (
     }
   }
 
-  return totalDebit.minus(totalCredit);
+  if (account.type === "ASSET" || account.type === "EXPENSE") {
+    return totalDebit.minus(totalCredit);
+  }
+
+  return totalCredit.minus(totalDebit);
+};
+
+export const calculateAccountsBalance = async (
+  userId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx || prisma;
+
+  return client.ledgerEntry.groupBy({
+    by: ["accountId", "type"],
+    where: {
+      account: {
+        userId,
+      },
+    },
+    _sum: {
+      amount: true,
+    },
+  });
 };

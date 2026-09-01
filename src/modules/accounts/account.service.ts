@@ -1,3 +1,4 @@
+import { Prisma } from "../../generated/prisma";
 import { AppError } from "../../utils/app-error";
 import {
   createAccount,
@@ -6,6 +7,7 @@ import {
   updateAccount,
   deleteAccount,
   calculateAccountBalance,
+  calculateAccountsBalance,
 } from "./account.repository";
 
 export const create = async (
@@ -22,13 +24,49 @@ export const create = async (
 export const findAll = async (userId: string) => {
   const accounts = await findAccountByUserId(userId);
 
-  return Promise.all(
-    accounts.map(async (account) => {
-      const balance = await calculateAccountBalance(account.id);
+  const aggregations = await calculateAccountsBalance(userId);
 
-      return { ...account, balance };
-    }),
-  );
+  const balanceMap = new Map<
+    string,
+    {
+      debit: Prisma.Decimal;
+      credit: Prisma.Decimal;
+    }
+  >();
+
+  for (const agg of aggregations) {
+    const current = balanceMap.get(agg.accountId) ?? {
+      debit: new Prisma.Decimal(0),
+      credit: new Prisma.Decimal(0),
+    };
+
+    if (agg.type === "DEBIT") {
+      current.debit = agg._sum.amount ?? new Prisma.Decimal(0);
+    }
+
+    if (agg.type === "CREDIT") {
+      current.credit = agg._sum.amount ?? new Prisma.Decimal(0);
+    }
+
+    balanceMap.set(agg.accountId, current);
+  }
+
+  return accounts.map((account) => {
+    const totals = balanceMap.get(account.id) ?? {
+      debit: new Prisma.Decimal(0),
+      credit: new Prisma.Decimal(0),
+    };
+
+    const balance =
+      account.type === "ASSET" || account.type === "EXPENSE"
+        ? totals.debit.minus(totals.credit)
+        : totals.credit.minus(totals.debit);
+
+    return {
+      ...account,
+      balance,
+    };
+  });
 };
 
 export const findById = async (id: string, userId: string) => {
@@ -38,25 +76,32 @@ export const findById = async (id: string, userId: string) => {
     throw new AppError(404, "Account not found");
   }
 
-  const balance = await calculateAccountBalance(account.id);
+  const balance =
+    (await calculateAccountBalance(account.id)) ?? new Prisma.Decimal(0);
 
   return { ...account, balance };
 };
 
 export const update = async (id: string, userId: string, name: string) => {
-  const result = await updateAccount(id, userId, name);
+  const account = await findAccountById(id, userId);
 
-  if (result.count === 0) {
+  if (!account) {
     throw new AppError(404, "Account not found");
   }
 
-  return findAccountById(id, userId);
+  await updateAccount(id, userId, name);
+
+  const balance = await calculateAccountBalance(account.id);
+
+  return { ...account, name, balance };
 };
 
 export const remove = async (id: string, userId: string) => {
-  const result = await deleteAccount(id, userId);
+  const account = await findAccountById(id, userId);
 
-  if (result.count === 0) {
+  if (!account) {
     throw new AppError(404, "Account not found");
   }
+
+  await deleteAccount(id, userId);
 };
