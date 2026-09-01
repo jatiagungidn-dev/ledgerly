@@ -4,8 +4,12 @@ import jwt from "jsonwebtoken";
 import { createUser, findUserByEmail } from "../users/user.repository";
 import { env } from "../../config/env";
 import { AppError } from "../../utils/app-error";
+import { PublicUser } from "../users/user.types";
 
-export const register = async (email: string, password: string) => {
+export const register = async (
+  email: string,
+  password: string,
+): Promise<PublicUser> => {
   const existingUser = await findUserByEmail(email);
 
   if (existingUser) {
@@ -24,7 +28,10 @@ export const register = async (email: string, password: string) => {
   };
 };
 
-export const login = async (email: string, password: string) => {
+export const login = async (
+  email: string,
+  password: string,
+): Promise<string> => {
   const user = await findUserByEmail(email);
 
   const passwordMatches = user

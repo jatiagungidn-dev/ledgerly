@@ -9,21 +9,14 @@ import {
   calculateAccountBalance,
   calculateAccountsBalance,
 } from "./account.repository";
+import { CreateAccountInput } from "./account.schema";
 
-export const create = async (
-  userId: string,
-  data: {
-    name: string;
-    type: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE";
-    currency: string;
-  },
-) => {
+export const create = async (userId: string, data: CreateAccountInput) => {
   return createAccount(userId, data);
 };
 
 export const findAll = async (userId: string) => {
   const accounts = await findAccountByUserId(userId);
-
   const aggregations = await calculateAccountsBalance(userId);
 
   const balanceMap = new Map<
@@ -58,7 +51,7 @@ export const findAll = async (userId: string) => {
     };
 
     const balance =
-      account.type === "ASSET" || account.type === "EXPENSE"
+      account.type === "ASSET"
         ? totals.debit.minus(totals.credit)
         : totals.credit.minus(totals.debit);
 
@@ -91,7 +84,8 @@ export const update = async (id: string, userId: string, name: string) => {
 
   await updateAccount(id, userId, name);
 
-  const balance = await calculateAccountBalance(account.id);
+  const balance =
+    (await calculateAccountBalance(account.id)) ?? new Prisma.Decimal(0);
 
   return { ...account, name, balance };
 };
