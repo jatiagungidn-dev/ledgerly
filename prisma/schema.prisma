@@ -15,6 +15,11 @@ enum AccountType {
   EXPENSE
 }
 
+enum CategoryType {
+  EXPENSE
+  REVENUE
+}
+
 enum EntryType {
   CREDIT
   DEBIT
@@ -52,14 +57,15 @@ model Account {
 }
 
 model Category {
-  id   String      @id @default(uuid())
+  id   String       @id @default(uuid())
   name String
-  type AccountType
+  type CategoryType
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  budgets Budget[]
+  budgets       Budget[]
+  ledgerEntries LedgerEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -96,10 +102,14 @@ model LedgerEntry {
   accountId String
   account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
   createdAt DateTime @default(now())
 
   @@index([accountId])
   @@index([journalId])
+  @@index([categoryId])
 }
 
 model Budget {
