@@ -3,14 +3,14 @@ import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/app-error";
 import {
   createBudgetRecord,
-  findBudget,
+  findBudgetsByUserId,
   findBudgetById,
   findOverLappingBudget,
   updateBudgetRecord,
   deleteBudgetRecord,
 } from "./budget.repository";
 import { CreateBudgetInput, UpdateBudgetInput } from "./budget.schema";
-import { findCategoriesById } from "../categories/category.repository";
+import { findCategoryById } from "../categories/category.repository";
 
 export const create = async (userId: string, data: CreateBudgetInput) => {
   const amountDecimal = new Prisma.Decimal(data.amount);
@@ -20,7 +20,7 @@ export const create = async (userId: string, data: CreateBudgetInput) => {
       throw new AppError(400, "Period start must be before period end");
     }
 
-    const category = await findCategoriesById(data.categoryId, userId, tx);
+    const category = await findCategoryById(data.categoryId, userId, tx);
 
     if (!category) {
       throw new AppError(404, "Category not found");
@@ -64,7 +64,7 @@ export const create = async (userId: string, data: CreateBudgetInput) => {
 };
 
 export const findAll = async (userId: string) => {
-  return findBudget(userId);
+  return findBudgetsByUserId(userId);
 };
 
 export const findById = async (budgetId: string, userId: string) => {
@@ -99,7 +99,7 @@ export const update = async (
       throw new AppError(400, "Period start must be before period end");
     }
 
-    const category = await findCategoriesById(categoryId, userId, tx);
+    const category = await findCategoryById(categoryId, userId, tx);
 
     if (!category) {
       throw new AppError(404, "Category not found");
@@ -138,18 +138,10 @@ export const update = async (
         categoryId: data.categoryId,
       }),
       ...(data.periodStart !== undefined && {
-        // updateBudgetRecord expects periodStart as string
-        periodStart:
-          data.periodStart instanceof Date
-            ? data.periodStart.toISOString()
-            : (data.periodStart as unknown as string),
+        periodStart: data.periodStart,
       }),
       ...(data.periodEnd !== undefined && {
-        // updateBudgetRecord expects periodEnd as string
-        periodEnd:
-          data.periodEnd instanceof Date
-            ? data.periodEnd.toISOString()
-            : (data.periodEnd as unknown as string),
+        periodEnd: data.periodEnd,
       }),
     };
 
@@ -160,11 +152,9 @@ export const update = async (
 };
 
 export const remove = async (budgetId: string, userId: string) => {
-  const budget = await findBudgetById(budgetId, userId);
+  const result = await deleteBudgetRecord(budgetId, userId);
 
-  if (!budget) {
+  if (result.count === 0) {
     throw new AppError(404, "Budget not found");
   }
-
-  await deleteBudgetRecord(budgetId, userId);
 };

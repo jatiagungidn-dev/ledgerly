@@ -2,19 +2,14 @@ import { AppError } from "../../utils/app-error";
 import {
   createCategory,
   findCategoriesByUserId,
-  findCategoriesById,
+  findCategoryById,
   updateCategory,
   deleteCategory,
   findCategoryByName,
 } from "./category.repository";
+import { CreateCategoryInput } from "./category.schema";
 
-export const create = async (
-  userId: string,
-  data: {
-    name: string;
-    type: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE";
-  },
-) => {
+export const create = async (userId: string, data: CreateCategoryInput) => {
   const existingCategory = await findCategoryByName(data.name, userId);
 
   if (existingCategory) {
@@ -29,7 +24,7 @@ export const findAll = async (userId: string) => {
 };
 
 export const findById = async (id: string, userId: string) => {
-  const category = await findCategoriesById(id, userId);
+  const category = await findCategoryById(id, userId);
 
   if (!category) {
     throw new AppError(404, "Category not found");
@@ -45,7 +40,7 @@ export const update = async (id: string, userId: string, name: string) => {
     throw new AppError(404, "Category not found");
   }
 
-  return findCategoriesById(id, userId);
+  return findCategoryById(id, userId);
 };
 
 export const remove = async (id: string, userId: string) => {

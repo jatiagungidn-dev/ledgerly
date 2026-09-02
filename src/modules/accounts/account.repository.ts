@@ -1,11 +1,11 @@
-import { Prisma } from "../../generated/prisma";
+import { AccountType, Prisma } from "../../generated/prisma";
 import { prisma } from "../../config/prisma";
 
 export const createAccount = async (
   userId: string,
   data: {
     name: string;
-    type: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE";
+    type: AccountType;
     currency: string;
   },
   tx?: Prisma.TransactionClient,
@@ -14,7 +14,7 @@ export const createAccount = async (
   return client.account.create({ data: { ...data, userId } });
 };
 
-export const findAccountByUserId = async (
+export const findAccountsByUserId = async (
   userId: string,
   tx?: Prisma.TransactionClient,
 ) => {
@@ -42,7 +42,7 @@ export const updateAccount = async (
   tx?: Prisma.TransactionClient,
 ) => {
   const client = tx || prisma;
-  return client.account.updateMany({ where: { id, userId }, data: { name } });
+  return client.account.update({ where: { id, userId }, data: { name } });
 };
 
 export const deleteAccount = async (
@@ -51,7 +51,7 @@ export const deleteAccount = async (
   tx?: Prisma.TransactionClient,
 ) => {
   const client = tx || prisma;
-  return client.account.deleteMany({ where: { id, userId } });
+  return client.account.delete({ where: { id, userId } });
 };
 
 export const calculateAccountBalance = async (

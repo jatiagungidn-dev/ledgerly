@@ -38,7 +38,9 @@ export const getBudgets = async (
   try {
     const budgets = await budgetService.findAll(req.userId);
 
-    return res.status(200).json({ status: "success", data: { budgets } });
+    return res
+      .status(200)
+      .json({ status: "success", count: budgets.length, data: { budgets } });
   } catch (err) {
     next(err);
   }

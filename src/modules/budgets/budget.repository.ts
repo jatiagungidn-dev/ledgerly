@@ -39,7 +39,7 @@ export const findBudgetById = async (
   });
 };
 
-export const findBudget = async (
+export const findBudgetsByUserId = async (
   userId: string,
   tx?: Prisma.TransactionClient,
 ) => {
@@ -95,8 +95,8 @@ export const updateBudgetRecord = async (
   data: {
     amount?: Prisma.Decimal;
     categoryId?: string;
-    periodStart?: string;
-    periodEnd?: string;
+    periodStart?: Date;
+    periodEnd?: Date;
   },
   tx?: Prisma.TransactionClient,
 ) => {

@@ -1,9 +1,10 @@
+import id from "zod/v4/locales/id.js";
 import { Prisma } from "../../generated/prisma";
 import { AppError } from "../../utils/app-error";
 import {
   createAccount,
   findAccountById,
-  findAccountByUserId,
+  findAccountsByUserId,
   updateAccount,
   deleteAccount,
   calculateAccountBalance,
@@ -11,12 +12,22 @@ import {
 } from "./account.repository";
 import { CreateAccountInput } from "./account.schema";
 
-export const create = async (userId: string, data: CreateAccountInput) => {
+export const create = async (
+  id: string,
+  userId: string,
+  data: CreateAccountInput,
+) => {
+  const existingAccount = await findAccountById(id, userId);
+
+  if (existingAccount) {
+    throw new AppError(400, "Account already exists");
+  }
+
   return createAccount(userId, data);
 };
 
 export const findAll = async (userId: string) => {
-  const accounts = await findAccountByUserId(userId);
+  const accounts = await findAccountsByUserId(userId);
   const aggregations = await calculateAccountsBalance(userId);
 
   const balanceMap = new Map<

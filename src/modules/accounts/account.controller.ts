@@ -3,7 +3,7 @@ import { createAccountSchema, updateAccountSchema } from "./account.schema.js";
 import * as accountService from "./account.service.js";
 
 export const createAccount = async (
-  req: Request,
+  req: Request<{ id: string }>,
   res: Response,
   next: NextFunction,
 ) => {
@@ -18,7 +18,11 @@ export const createAccount = async (
       });
     }
 
-    const account = await accountService.create(req.userId, result.data);
+    const account = await accountService.create(
+      req.params.id,
+      req.userId,
+      result.data,
+    );
 
     return res.status(201).json({
       status: "success",
