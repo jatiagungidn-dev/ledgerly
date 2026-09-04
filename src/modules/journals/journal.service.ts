@@ -11,18 +11,21 @@ import {
 import { CreateJournalInput } from "./journal.schema";
 
 export const create = async (userId: string, data: CreateJournalInput) => {
-  const existringJournal = await findJournalByIdempotencyKey(
+  const existingJournal = await findJournalByIdempotencyKey(
     data.idempotencyKey,
   );
 
-  if (existringJournal) {
-    if (existringJournal.userId !== userId) {
+  if (existingJournal) {
+    if (existingJournal.userId !== userId) {
       throw new AppError(409, "Idempotency key conflict");
     }
-    return existringJournal;
+    return existingJournal;
   }
 
   const accountIds = Array.from(new Set(data.entries.map((e) => e.accountId)));
+
+  let totalDebit = new Prisma.Decimal(0);
+  let totalCredit = new Prisma.Decimal(0);
 
   return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const userAccountsCount = await countUserAccounts(userId, accountIds, tx);
@@ -34,15 +37,26 @@ export const create = async (userId: string, data: CreateJournalInput) => {
       );
     }
 
-    const journalData = {
-      ...data,
-      entries: data.entries.map((entry) => ({
-        ...entry,
-        amount: entry.amount.toString(),
-      })),
-    };
+    if (!data.entries || data.entries.length === 0) {
+      throw new AppError(400, "Journal must have at least one entry");
+    }
 
-    return await createJournal(userId, journalData, tx);
+    for (const entry of data.entries) {
+      const amt = new Prisma.Decimal(entry.amount);
+      if (entry.type === "DEBIT") {
+        totalDebit = totalDebit.add(amt);
+      } else if (entry.type === "CREDIT") {
+        totalCredit = totalCredit.add(amt);
+      } else {
+        throw new AppError(400, "Invalid entry type");
+      }
+    }
+
+    if (!totalDebit.equals(totalCredit)) {
+      throw new AppError(400, "Debits and credits must be equal");
+    }
+
+    return await createJournal(userId, data, tx);
   });
 };
 
