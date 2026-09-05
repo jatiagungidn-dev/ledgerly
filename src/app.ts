@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import cors from "cors";
 
 import { prisma } from "./config/prisma";
 import authRouter from "./modules/auth/auth.routes";
@@ -11,6 +12,7 @@ import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();
 app.use(express.json());
+app.use(cors({ origin: "http://localhost:5173" }));
 
 app.get("/health", async (_req: Request, res: Response) => {
   try {
